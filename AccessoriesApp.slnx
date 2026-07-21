@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="Accessories.Api.Tests/Accessories.Api.Tests.csproj" />
+  <Project Path="Accessories.Api/Accessories.Api.csproj" />
+  <!-- <Project Path="Accessories.EndToEndTests/Accessories.EndToEndTests.csproj" /> -->
+  <Project Path="Accessories.E2ETests/Accessories.E2ETests.csproj" />
+</Solution>

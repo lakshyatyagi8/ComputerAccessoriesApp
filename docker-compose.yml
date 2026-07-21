@@ -1,0 +1,28 @@
+services:
+  # The main Web API Service
+  api:
+    image: accessories-api
+    build:
+      context: .
+      target: final
+    ports:
+      - "8080:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_HTTP_PORTS=8080
+      # Override the appsettings.json connection string to point to the Docker volume
+      - ConnectionStrings__DefaultConnection=Data Source=/app/data/accessories.db
+    volumes:
+      # Persists your SQLite database even if the container is destroyed
+      - sqlite_data:/app/data
+
+  # The Test Runner Service
+  test-runner:
+    image: accessories-tests
+    build:
+      context: .
+      target: test
+    # No ports or volumes needed; it spins up, runs the xUnit tests, and exits.
+
+volumes:
+  sqlite_data:
