@@ -87,10 +87,15 @@ jobs:
     name: Angular Frontend Tests
     runs-on: ubuntu-latest
     container:
-      image: markhobson/node-chrome:24
+      # Use the official Node 24 image
+      image: node:24
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      # Install Chromium inside the container
+      - name: Install browser for tests
+        run: apt-get update && apt-get install -y chromium
 
       - name: Install Node Dependencies
         working-directory: ./accessories-web
@@ -98,4 +103,7 @@ jobs:
 
       - name: Run Angular Tests
         working-directory: ./accessories-web
+        # Tell Karma exactly where the newly installed Chromium is located
+        env:
+          CHROME_BIN: /usr/bin/chromium
         run: npm test -- --watch=false --browsers=ChromeHeadless
