@@ -41,8 +41,9 @@ jobs:
         rm -f Accessories.Api/*.db 
         export ASPNETCORE_URLS="http://127.0.0.1:8080"
         export ASPNETCORE_ENVIRONMENT="Development"
-        dotnet run --project Accessories.Api/Accessories.Api.csproj &
+        dotnet run --project Accessories.Api/Accessories.Api.csproj --no-launch-profile > api.log 2>&1 &
         sleep 10
+        cat api.log
 
     # 4. Run ONLY the E2E Tests against the running API
     - name: Run E2E Tests
