@@ -7,6 +7,8 @@ on:
   pull_request:
     branches:
       - main
+  workflow_dispatch: # This adds the manual trigger
+      
 
 jobs:
   backend-tests:
@@ -28,7 +30,7 @@ jobs:
   frontend-tests:
     name: Angular Frontend Tests
     runs-on: ubuntu-latest
-    # Runs all steps inside a Node container pre-configured with Chrome for Karma testing
+    # Runs all steps inside a Node container pre-configured with Chrome for PW testing
     container:
       image: markhobson/node-chrome:latest
     steps:
