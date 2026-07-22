@@ -57,17 +57,17 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Install Chromium inside the container for Karma tests
-      - name: Install browser for tests
-        run: apt-get update && apt-get install -y chromium
-
       - name: Install Node Dependencies
         working-directory: ./accessories-web
         run: npm ci
 
+      - name: Install Vitest Browser Dependencies
+        working-directory: ./accessories-web
+        # Install the exact provider Vitest is asking for, plus Playwright
+        run: |
+          npm install --no-save @vitest/browser-playwright playwright
+          npx playwright install --with-deps chromium
+
       - name: Run Angular Tests
         working-directory: ./accessories-web
-        # Tell Karma exactly where the newly installed Chromium is located
-        env:
-          CHROME_BIN: /usr/bin/chromium
-        run: npm test -- --watch=false --browsers=ChromeHeadless
+        run: npm test -- --watch=false
