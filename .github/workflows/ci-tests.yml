@@ -7,14 +7,12 @@ on:
   pull_request:
     branches:
       - main
-  workflow_dispatch: # This adds the manual trigger
-      
+  workflow_dispatch:
 
 jobs:
   backend-tests:
     name: .NET Backend Tests
     runs-on: ubuntu-latest
-    # Runs all steps inside the official .NET SDK container
     container:
       image: mcr.microsoft.com/dotnet/sdk:10.0
     steps:
@@ -27,10 +25,43 @@ jobs:
       - name: Run Backend Tests
         run: dotnet test AccessoriesApp.slnx --no-restore --verbosity normal
 
+  e2e-tests:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    needs: backend-tests  # Wait for backend tests to pass
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Start API Server
+        run: |
+          cd Accessories.Api
+          dotnet build
+          dotnet run &
+          # Wait for API to be ready
+          sleep 10
+          for i in {1..60}; do
+            if curl -f http://localhost:8080/api/products > /dev/null 2>&1; then
+              echo "API is ready"
+              exit 0
+            fi
+            echo "Waiting for API... (attempt $i)"
+            sleep 2
+          done
+          echo "API failed to start"
+          exit 1
+
+      - name: Install Node Dependencies
+        working-directory: ./accessories-web
+        run: npm ci
+
+      - name: Run E2E Tests
+        working-directory: ./accessories-web
+        run: npm test -- --watch=false --browsers=ChromeHeadless
+
   frontend-tests:
     name: Angular Frontend Tests
     runs-on: ubuntu-latest
-    # Runs all steps inside a Node container pre-configured with Chrome for PW testing
     container:
       image: markhobson/node-chrome:latest
     steps:
@@ -43,5 +74,4 @@ jobs:
 
       - name: Run Angular Tests
         working-directory: ./accessories-web
-        # Enforces a single run using headless Chrome, ignoring the continuous watch mode
         run: npm test -- --watch=false --browsers=ChromeHeadless
