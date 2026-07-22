@@ -16,82 +16,36 @@ jobs:
     container:
       image: mcr.microsoft.com/dotnet/sdk:10.0
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Restore .NET Dependencies
-      run: dotnet restore AccessoriesApp.slnx
+      - name: Restore .NET Dependencies
+        run: dotnet restore AccessoriesApp.slnx
 
-    # 1. Run Unit and Integration tests FIRST (Before starting the API)
-    - name: Run Unit & Integration Tests
-      run: dotnet test Accessories.Api.Tests/Accessories.Api.Tests.csproj --no-restore --verbosity normal
+      # 1. Run Unit and Integration tests FIRST (Before starting the API)
+      - name: Run Unit & Integration Tests
+        run: dotnet test Accessories.Api.Tests/Accessories.Api.Tests.csproj --no-restore --verbosity normal
 
-    # 2. Install Playwright for the E2E Project
-    - name: Build E2E tests
-      run: dotnet build Accessories.E2ETests/Accessories.E2ETests.csproj
-    - name: Install Playwright Dependencies
-      run: pwsh Accessories.E2ETests/bin/Debug/net10.0/playwright.ps1 install --with-deps
+      # 2. Install Playwright for the E2E Project
+      - name: Build E2E tests
+        run: dotnet build Accessories.E2ETests/Accessories.E2ETests.csproj
+        
+      - name: Install Playwright Dependencies
+        run: pwsh Accessories.E2ETests/bin/Debug/net10.0/playwright.ps1 install --with-deps
 
-    # 3. Start the Backend API
-    - name: Start the Backend API
-    # Remove any existing SQLite database files to prevent locks/contamination
-    # Start the API in the background
-    # Wait for the server and database initialization to complete
-      run: |        
-        rm -f Accessories.Api/*.db 
-        export ASPNETCORE_URLS="http://127.0.0.1:8080"
-        export ASPNETCORE_ENVIRONMENT="Development"
-        dotnet run --project Accessories.Api/Accessories.Api.csproj --no-launch-profile > api.log 2>&1 &
-        sleep 10
-        cat api.log
+      # 3. Start the Backend API
+      - name: Start the Backend API
+        run: |        
+          rm -f Accessories.Api/*.db 
+          export ASPNETCORE_URLS="http://127.0.0.1:8080"
+          export ASPNETCORE_ENVIRONMENT="Development"
+          dotnet run --project Accessories.Api/Accessories.Api.csproj --no-launch-profile > api.log 2>&1 &
+          sleep 10
+          cat api.log
 
-    # 4. Run ONLY the E2E Tests against the running API
-    - name: Run E2E Tests
-      run: dotnet test Accessories.E2ETests/Accessories.E2ETests.csproj --no-build --verbosity normal
-
-  e2e-tests:
-  name: E2E Tests
-  runs-on: ubuntu-latest
-  needs: backend-tests
-  container:
-    image: mcr.microsoft.com/dotnet/sdk:10.0
-  steps:
-  - name: Checkout code
-    uses: actions/checkout@v4
-
-  - name: Restore Dependencies
-    run: dotnet restore AccessoriesApp.slnx
-
-  - name: Start API Server
-    run: |
-      cd Accessories.Api
-      rm -f *.db  # Clean database
-      export ASPNETCORE_URLS="http://127.0.0.1:8080"
-      export ASPNETCORE_ENVIRONMENT="Development"
-      dotnet run --no-build > api.log 2>&1 &
-      sleep 10
-      cat api.log
-      
-      # Health check
-      for i in {1..60}; do
-        if curl -f http://127.0.0.1:8080/api/products > /dev/null 2>&1; then
-          echo "API is ready"
-          exit 0
-        fi
-        echo "Waiting for API... (attempt $i)"
-        sleep 2
-      done
-      echo "API failed to start"
-      cat api.log
-      exit 1
-
-  - name: Install Node Dependencies
-      working-directory: ./accessories-web
-      run: npm ci
-
-  - name: Run E2E Tests
-      working-directory: ./accessories-web
-      run: npm test -- --watch=false --browsers=ChromeHeadless
+      # 4. Run ONLY the E2E Tests against the running API
+      - name: Run E2E Tests
+        run: dotnet test Accessories.E2ETests/Accessories.E2ETests.csproj --no-build --verbosity normal
 
   frontend-tests:
     name: Angular Frontend Tests
@@ -103,7 +57,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Install Chromium inside the container
+      # Install Chromium inside the container for Karma tests
       - name: Install browser for tests
         run: apt-get update && apt-get install -y chromium
 
