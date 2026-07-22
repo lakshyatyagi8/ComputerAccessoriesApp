@@ -1,0 +1,45 @@
+name: Containerized CI Tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  backend-tests:
+    name: .NET Backend Tests
+    runs-on: ubuntu-latest
+    # Runs all steps inside the official .NET SDK container
+    container:
+      image: mcr.microsoft.com/dotnet/sdk:10.0
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Restore .NET Dependencies
+        run: dotnet restore AccessoriesApp.slnx
+
+      - name: Run Backend Tests
+        run: dotnet test AccessoriesApp.slnx --no-restore --verbosity normal
+
+  frontend-tests:
+    name: Angular Frontend Tests
+    runs-on: ubuntu-latest
+    # Runs all steps inside a Node container pre-configured with Chrome for Karma testing
+    container:
+      image: markhobson/node-chrome:latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Node Dependencies
+        working-directory: ./accessories-web
+        run: npm ci
+
+      - name: Run Angular Tests
+        working-directory: ./accessories-web
+        # Enforces a single run using headless Chrome, ignoring the continuous watch mode
+        run: npm test -- --watch=false --browsers=ChromeHeadless
