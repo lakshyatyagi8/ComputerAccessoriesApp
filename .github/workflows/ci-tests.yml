@@ -22,6 +22,15 @@ jobs:
       - name: Restore .NET Dependencies
         run: dotnet restore AccessoriesApp.slnx
 
+      - name: Start the Backend API
+        # We start the API in the background (&) and force it to listen on 8080
+        run: |
+          export ASPNETCORE_URLS="http://127.0.0.1:8080"
+          dotnet run --project Accessories.Api/Accessories.Api.csproj &
+          
+          # Pause for 10 seconds to ensure the API has fully started up
+          sleep 10
+
       - name: Run Backend Tests
         run: dotnet test AccessoriesApp.slnx --no-restore --verbosity normal
 
@@ -63,7 +72,7 @@ jobs:
     name: Angular Frontend Tests
     runs-on: ubuntu-latest
     container:
-      image: markhobson/node-chrome:latest
+      image: markhobson/node-chrome:24
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
