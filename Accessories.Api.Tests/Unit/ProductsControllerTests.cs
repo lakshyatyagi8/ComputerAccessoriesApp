@@ -40,8 +40,8 @@ public class ProductsControllerTests
         ProductDto productDto)
     {
         // Arrange
-        _ = repositoryMock.Setup(repo => repo.CreateAsync(It.IsAny<Product>()))
-            .ReturnsAsync((Product?)null); // Simulate failure to create product
+       _ = repositoryMock.Setup(repo => repo.CreateAsync(It.IsAny<Product>()))
+            .Returns(Task.FromResult<Product>(null!)); // Bypasses ReturnsAsync nullability resolution
 
         // Act
         var result = await sut.CreateProduct(productDto);
