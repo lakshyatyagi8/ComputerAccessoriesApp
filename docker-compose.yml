@@ -24,5 +24,15 @@ services:
       target: test
     # No ports or volumes needed; it spins up, runs the xUnit tests, and exits.
 
+  # The Angular Web Frontend Service
+  web:
+    build:
+      context: ./accessories-web
+      dockerfile: Dockerfile
+    ports:
+      - "4200:80" # Maps local port 4200 to the container's internal port 80
+    depends_on:
+      - api
+
 volumes:
   sqlite_data:

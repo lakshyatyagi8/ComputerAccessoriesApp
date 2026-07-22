@@ -21,8 +21,22 @@ public class Program
         builder.Services.AddControllers();
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
+        
+        // Add this to allow your Angular frontend to talk to the API
+        builder.Services.AddCors(options =>
+        {
+            options.AddPolicy("AllowAngularFrontend",
+                policy =>
+                {
+                    policy.WithOrigins("http://localhost:4200")
+                        .AllowAnyHeader()
+                        .AllowAnyMethod();
+                });
+        });
 
         var app = builder.Build();
+        // Add this right AFTER app.Build() and BEFORE app.MapControllers() or your endpoints
+        app.UseCors("AllowAngularFrontend");
         // Auto-create the database when the container spins up
         using (var scope = app.Services.CreateScope())
         {
@@ -36,6 +50,7 @@ public class Program
         }
 
         app.UseHttpsRedirection();
+        app.UseCors("AllowAngularFrontend");
         app.MapControllers();
         app.Run();
     }
