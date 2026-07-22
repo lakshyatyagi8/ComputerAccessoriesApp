@@ -16,23 +16,37 @@ jobs:
     container:
       image: mcr.microsoft.com/dotnet/sdk:10.0
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
 
-      - name: Restore .NET Dependencies
-        run: dotnet restore AccessoriesApp.slnx
+    - name: Restore .NET Dependencies
+      run: dotnet restore AccessoriesApp.slnx
 
-      - name: Start the Backend API
-        # We start the API in the background (&) and force it to listen on 8080
-        run: |
-          export ASPNETCORE_URLS="http://127.0.0.1:8080"
-          dotnet run --project Accessories.Api/Accessories.Api.csproj &
-          
-          # Pause for 10 seconds to ensure the API has fully started up
-          sleep 10
+    # 1. Run Unit and Integration tests FIRST (Before starting the API)
+    - name: Run Unit & Integration Tests
+      run: dotnet test Accessories.Api.Tests/Accessories.Api.Tests.csproj --no-restore --verbosity normal
 
-      - name: Run Backend Tests
-        run: dotnet test AccessoriesApp.slnx --no-restore --verbosity normal
+    # 2. Install Playwright for the E2E Project
+    - name: Build E2E tests
+      run: dotnet build Accessories.E2ETests/Accessories.E2ETests.csproj
+    - name: Install Playwright Dependencies
+      run: pwsh Accessories.E2ETests/bin/Debug/net8.0/playwright.ps1 install --with-deps
+
+    # 3. Start the Backend API
+    - name: Start the Backend API
+    # Remove any existing SQLite database files to prevent locks/contamination
+    # Start the API in the background
+    # Wait for the server and database initialization to complete
+      run: |        
+        rm -f Accessories.Api/*.db 
+        export ASPNETCORE_URLS="http://127.0.0.1:8080"
+        export ASPNETCORE_ENVIRONMENT="Development"
+        dotnet run --project Accessories.Api/Accessories.Api.csproj &
+        sleep 10
+
+    # 4. Run ONLY the E2E Tests against the running API
+    - name: Run E2E Tests
+      run: dotnet test Accessories.E2ETests/Accessories.E2ETests.csproj --no-build --verbosity normal
 
   e2e-tests:
     name: E2E Tests
